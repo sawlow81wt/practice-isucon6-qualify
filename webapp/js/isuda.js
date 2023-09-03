@@ -9,6 +9,7 @@ const json = require('koa-json');
 const onerror = require('koa-onerror');
 const bodyparser = require('koa-bodyparser')({ formLimit: '5mb' });
 const logger = require('koa-logger');
+const serve = require('koa-static');
 
 const isuda = require('./routes/isuda');
 
@@ -18,7 +19,7 @@ app.use(convert(json()));
 app.use(convert(logger()));
 app.keys = ['tonymoris'];
 app.use(convert(session(app, { key: 'isuda_session', maxAge: 3600 * 24 })));
-app.use(require('koa-static')(__dirname + '/public'));
+app.use(serve(__dirname +'/public', { maxage: 24 * 60 * 60 * 1000 }));
 
 app.use(views(__dirname + '/views', {
   extension: 'ejs'
