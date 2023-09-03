@@ -29,6 +29,7 @@
     "koa-session": "^6.4.0",
     "koa-static": "^5.0.0",
     "mysql2": "^3.6.0",
+    "node-cache": "^5.1.2",
     "promise-mysql": "^5.2.0",
     "pug": "^3.0.2",
     "runkoa": "^1.5.9"
