@@ -47,8 +47,8 @@ services:
       - "5050:5050"
   mysql-isuda:
     build:
-      context: docker
-      dockerfile: ./mysql.dockerfile
+      context: .
+      dockerfile: ./docker/mysql.dockerfile
     ports:
       - "3306:3306"
     volumes:
@@ -62,8 +62,8 @@ services:
       MYSQL_PASSWORD: isucon
   mysql-isutar:
     build:
-      context: docker
-      dockerfile: ./mysql.dockerfile
+      context: .
+      dockerfile: ./docker/mysql.dockerfile
     ports:
       - "3307:3306"
     volumes:
