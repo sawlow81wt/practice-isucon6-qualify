@@ -47,7 +47,7 @@ router.get('initialize', async (ctx, next) => {
 
 router.get('stars', async (ctx, next) => {
   const db = await dbh(ctx);
-  const stars =  (await db.query('SELECT * FROM star WHERE keyword = ?', [ctx.query.keyword]))[0];
+  const stars =  (await db.query('SELECT keyword, user_name FROM star WHERE keyword = ?', [ctx.query.keyword]))[0];
   ctx.body = {
     stars: stars,
   };

@@ -7,6 +7,7 @@ services:
     volumes:
       - ./config/nginx.conf:/etc/nginx/nginx.conf
       - ./log/nginx:/var/log/nginx
+      - ./webapp/public:/public
     depends_on:
       - isuda
       - isutar
