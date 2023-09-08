@@ -14,3 +14,6 @@ CREATE TABLE user (
     password VARCHAR(40),
     created_at DATETIME NOT NULL
 ) Engine=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE entry ADD keyword_length INT UNSIGNED NOT NULL AFTER keyword;
+ALTER TABLE entry ADD INDEX keyword_length (keyword_length);

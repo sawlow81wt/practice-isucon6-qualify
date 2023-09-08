@@ -25,6 +25,103 @@ const config = (key) => {
   return _config[key];
 };
 
+
+class Node {
+    constructor(id) {
+        this.id = id;
+        this.child = new Map()
+        this.failure = null
+        this.pattern = null
+    }
+
+    has_next(char) {
+        return this.child.has(char);
+    }
+
+    is_terminal() {
+        return this.child.size === 0;
+    }
+}
+
+class AhoCorasick {
+
+    constructor(patterns) {
+        this.states = [new Node(0)];
+        this.output = [[]];
+        this.make_goto(patterns);
+        this.make_failure();
+    }
+
+    make_goto(patterns) {
+        for (let i = 0; i < patterns.length; i++) {
+            let current_state = this.states[0];
+            for (let j = 0; j < patterns[i].length; j++) {
+                const char = patterns[i][j];
+                if (!current_state.has_next(char)) {
+                    const new_state = new Node(this.states.length);
+                    current_state.child.set(char, new_state);
+                    this.states.push(new_state);
+                }
+                current_state = current_state.child.get(char);
+            }
+
+            current_state.pattern = patterns[i] // 末尾のノードにパターンを追加;
+        }
+    }
+
+    make_failure() {
+        
+        const queue = [ this.states[0] ];
+        while (queue.length > 0) {
+            const current_state = queue.shift();
+            for (let [char, next_state] of current_state.child) {
+                queue.push(next_state);
+                if (current_state.id === 0) {
+                    next_state.failure = this.states[0];
+                } else {
+                    let failure_state = current_state.failure;
+                    while (this.goto(failure_state, char) === null) {
+                        failure_state = failure_state.failure;
+                    }
+                    next_state.failure = this.goto(failure_state, char);
+                }
+            }
+        }
+    }
+
+    goto(state, char) {
+        if (state.has_next(char)) {
+            return state.child.get(char);
+        }
+        if (state.id === 0) {
+            return state;
+        }
+        return null
+    }
+
+
+    match(query) {
+        const result = [];
+        let current_state = this.states[0] // root node
+
+        for (let i = 0; i < query.length; i++) {
+            // 遷移先がある場合は遷移
+            while (this.goto(current_state, query[i]) === null) {
+                if (current_state.pattern !== null) {
+                    result.push([i - current_state.pattern.length, i, current_state.pattern]);
+                }
+                current_state = current_state.failure;
+            }
+            current_state = this.goto(current_state, query[i]);
+        }
+
+        if (current_state.pattern !== null) {
+            result.push([query.length - current_state.pattern.length, query.length, current_state.pattern]);
+        }
+        return result;
+    }
+}
+
 // SEE ALSO: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
 const RFC3986URIComponent = (str) => {
     return encodeURIComponent(str).replace(/[!'()*]/g, (c) => {
@@ -103,8 +200,9 @@ router.get('', async (ctx, next) => {
 
   const db = await dbh(ctx);
   const entries = (await db.query('SELECT * FROM entry ORDER BY updated_at DESC LIMIT ? OFFSET ?', [perPage, perPage * (page - 1)]))[0];
+  const aho_corasick = await make_aho_corasick(ctx);
   for (let entry of entries) {
-    entry.html = await htmlify(ctx, entry.description);
+    entry.html = await htmlify(ctx, entry.description, aho_corasick);
     entry.stars = await loadStars(ctx, entry.keyword);
   }
 
@@ -151,10 +249,10 @@ router.post('keyword', async (ctx, next) => {
 
   const db = await dbh(ctx);
   await db.query(
-    'INSERT INTO entry (author_id, keyword, description, created_at, updated_at) ' +
-    'VALUES (?, ?, ?, NOW(), NOW()) ' +
+    'INSERT INTO entry (author_id, keyword, keyword_length, description, created_at, updated_at) ' +
+    'VALUES (?, ?, CHARACTER_LENGTH(keyword), ?, NOW(), NOW()) ' +
     'ON DUPLICATE KEY UPDATE ' +
-    'author_id = ?, keyword = ?, description = ?, updated_at = NOW()',
+    'author_id = ?, keyword = ?, keyword_length = CHARACTER_LENGTH(keyword), description = ?, updated_at = NOW()',
     [
       userId, keyword, description, userId, keyword, description
     ]);
@@ -253,7 +351,8 @@ router.get('keyword/:keyword', async (ctx, next) => {
     return;
   }
   ctx.state.entry = entries[0];
-  ctx.state.entry.html = await htmlify(ctx, entries[0].description);
+  const aho_corasick = await make_aho_corasick(ctx);
+  ctx.state.entry.html = await htmlify(ctx, entries[0].description, aho_corasick);
   ctx.state.entry.stars = await loadStars(ctx, keyword);
   await ctx.render('keyword');
 });
@@ -288,29 +387,29 @@ router.post('keyword/:keyword', async (ctx, next) => {
   await ctx.redirect('/');
 });
 
-const htmlify = async (ctx, content) => {
+const make_aho_corasick = async (ctx) => {
+  const db = await dbh(ctx);
+  const keywords = (await db.query('SELECT * FROM entry ORDER BY CHARACTER_LENGTH(keyword) DESC'))[0];
+  const aho_corasick = new AhoCorasick(
+    keywords.map((keyword) => escapeRegExp(keyword.keyword))
+  );
+  return aho_corasick;
+};
+
+const htmlify = async (ctx, content, aho_corasick) => {
   if (content == null) {
     return '';
   }
-
-  const db = await dbh(ctx);
-  const keywords = (await db.query('SELECT * FROM entry ORDER BY CHARACTER_LENGTH(keyword) DESC'))[0];
-  const key2sha = new Map();
-  const re = new RegExp(keywords.map((keyword) => escapeRegExp(keyword.keyword)).join('|'), 'g');
-  let result = content.replace(re, (keyword) => {
-    const sha1 = crypto.createHash('sha1');
-    sha1.update(keyword);
-    let sha1hex = `isuda_${sha1.digest('hex')}`;
-    key2sha.set(keyword, sha1hex);
-    return sha1hex;
-  });
-  for (let kw of key2sha.keys()) {
-    const url = `/keyword/${RFC3986URIComponent(kw)}`;
-    const link = `<a href=${url}>${ejs.escapeXML(kw)}</a>`;
-    result = result.replace(new RegExp(escapeRegExp(key2sha.get(kw)), 'g'), link);
+  const results = aho_corasick.match(content);
+  let result = '';
+  let prev = 0;
+  for (const [start, end, pattern] of results) {
+    result += content.slice(prev, start);
+    const url = `/keyword/${RFC3986URIComponent(pattern)}`;
+    const link = `<a href=${url}>${ejs.escapeXML(pattern)}</a>`;
+    result += link;
+    prev = end;
   }
-  result = result.replace(/\n/g, "<br />\n");
-
   return result;
 };
 
