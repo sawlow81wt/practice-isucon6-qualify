@@ -5,6 +5,9 @@ const crypto = require('crypto');
 const axios = require('axios');
 const ejs = require('ejs');
 
+const NodeCache = require('node-cache');
+const nodeCache = new NodeCache({ stdTTL: 60 * 60 * 24 });
+
 let _config;
 const config = (key) => {
   if (!_config) {
@@ -71,7 +74,6 @@ class AhoCorasick {
     }
 
     make_failure() {
-        
         const queue = [ this.states[0] ];
         while (queue.length > 0) {
             const current_state = queue.shift();
@@ -125,9 +127,15 @@ class AhoCorasick {
 
 // SEE ALSO: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
 const RFC3986URIComponent = (str) => {
-    return encodeURIComponent(str).replace(/[!'()*]/g, (c) => {
+    const ret = nodeCache.get(str);
+    if (ret) {
+      return ret;
+    }
+    const encoded = encodeURIComponent(str).replace(/[!'()*]/g, (c) => {
           return '%' + c.charCodeAt(0).toString(16);
     });
+    nodeCache.set(str, encoded);
+    return encoded;
 };
 
 const dbh = async (ctx) => {
