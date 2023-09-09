@@ -266,7 +266,7 @@ router.post('keyword', async (ctx, next) => {
     [
       userId, keyword, description, userId, keyword, description
     ]);
-
+  await purge_keywords_cache(ctx);
   await ctx.redirect('/');
 
 });
@@ -408,20 +408,35 @@ router.post('keyword/:keyword', async (ctx, next) => {
   }
 
   const db = await dbh(ctx);
-  const entries = (await db.query('SELECT * FROM entry WHERE keyword = ?', [keyword]))[0];
+  const entries = (await db.query('SELECT keywords FROM entry WHERE keyword = ?', [keyword]))[0];
   if (entries.length == 0) {
     ctx.status = 404;
     return;
   }
 
   await db.query('DELETE FROM entry WHERE keyword = ?', [keyword]);
-
+  await purge_keywords_cache(ctx);
   await ctx.redirect('/');
 });
 
-const make_aho_corasick = async (ctx) => {
+const get_keywords = async (ctx) => {
+  const cached_keywords = nodeCache.get('keywords');
+  if (cached_keywords) {
+    return cached_keywords;
+  }
+
   const db = await dbh(ctx);
   const keywords = (await db.query('SELECT keyword FROM entry'))[0];
+  nodeCache.set('keywords', keywords);
+  return keywords;
+};
+
+const purge_keywords_cache = async (ctx) => {
+  nodeCache.del('keywords');
+};
+
+const make_aho_corasick = async (ctx) => {
+  const keywords = await get_keywords(ctx);
   const aho_corasick = new AhoCorasick(
     keywords.map((keyword) => escapeRegExp(keyword.keyword))
   );
