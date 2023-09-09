@@ -17,3 +17,4 @@ CREATE TABLE user (
 
 ALTER TABLE entry ADD keyword_length INT UNSIGNED NOT NULL AFTER keyword;
 ALTER TABLE entry ADD INDEX updated_at (updated_at);
+ALTER TABLE entry ADD INDEX keyword_idx (keyword);
