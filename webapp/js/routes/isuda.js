@@ -389,7 +389,7 @@ router.post('keyword/:keyword', async (ctx, next) => {
 
 const make_aho_corasick = async (ctx) => {
   const db = await dbh(ctx);
-  const keywords = (await db.query('SELECT * FROM entry ORDER BY CHARACTER_LENGTH(keyword) DESC'))[0];
+  const keywords = (await db.query('SELECT keyword FROM entry ORDER BY keyword_length DESC'))[0];
   const aho_corasick = new AhoCorasick(
     keywords.map((keyword) => escapeRegExp(keyword.keyword))
   );
