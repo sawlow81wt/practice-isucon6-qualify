@@ -191,11 +191,20 @@ router.get('', async (ctx, next) => {
   const db = await dbh(ctx);
   const entries = (await db.query('SELECT * FROM entry ORDER BY updated_at DESC LIMIT ? OFFSET ?', [perPage, perPage * (page - 1)]))[0];
   const aho_corasick = await make_aho_corasick(ctx);
+  const load_stars = [];
   for (let entry of entries) {
-    entry.html = await htmlify(ctx, entry.description, aho_corasick);
-    entry.stars = await loadStars(ctx, entry.keyword);
+    load_stars.push(loadStars(ctx, entry.keyword))
   }
+  const entry_stars = new Map;
+  (await Promise.all(load_stars)).forEach((stars, i) => {
+    entry_stars.set(entries[i].keyword, stars);
+  });
 
+  for (let entry of entries) {
+    entry.html = htmlify(ctx, entry.description, aho_corasick);
+    entry.stars = entry_stars.get(entry.keyword);
+  }
+  
   const totalEntries = await db.query('SELECT COUNT(*) AS `count` FROM entry');
   const lastPage = Math.ceil(totalEntries[0].count / perPage);
   const pages = [];
@@ -344,7 +353,7 @@ router.get('keyword/:keyword', async (ctx, next) => {
   }
   ctx.state.entry = entries[0];
   const aho_corasick = await make_aho_corasick(ctx);
-  ctx.state.entry.html = await htmlify(ctx, entries[0].description, aho_corasick);
+  ctx.state.entry.html = htmlify(ctx, entries[0].description, aho_corasick);
   ctx.state.entry.stars = await loadStars(ctx, keyword);
   await ctx.render('keyword');
 });
@@ -408,7 +417,7 @@ const make_aho_corasick = async (ctx) => {
   return aho_corasick;
 };
 
-const htmlify = async (ctx, content, aho_corasick) => {
+const htmlify = (ctx, content, aho_corasick) => {
   if (content == null) {
     return '';
   }
