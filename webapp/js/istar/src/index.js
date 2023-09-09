@@ -66,7 +66,7 @@ const postStars = async (ctx) => {
   const keyword = ctx.req.query("keyword") || body.keyword;
   const user = ctx.req.query("user") || body.user;
 
-  const origin = process.env.ISUDA_ORIGIN || 'http://localhost:5000';
+  const origin = process.env.ISUDA2_ORIGIN || 'http://localhost:5003';
   const url = `${origin}/hasKeyword/${RFC3986URIComponent(keyword)}`;
   try {
     const res = await axios.get(url);
