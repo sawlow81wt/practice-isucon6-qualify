@@ -43,6 +43,7 @@ const initialize = async (ctx) => {
     );
   `)
   await db.query(`
+    DROP INDEX IF EXISTS keyword_idx;
     CREATE INDEX keyword_idx ON star (keyword);
   `);
   return ctx.json({
