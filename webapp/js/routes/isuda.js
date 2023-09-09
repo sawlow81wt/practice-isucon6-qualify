@@ -15,6 +15,7 @@ const config = (key) => {
       dbName: process.env.ISUDA_DB_NAME || 'isuda',
       dbUser: process.env.ISUDA_DB_USER || 'root',
       dbPassword: process.env.ISUDA_DB_PASSWORD || '',
+      webOrigin: process.env.WEB_ORIGIN || 'http://localhost',
       isutarOrigin: process.env.ISUTAR_ORIGIN || 'http://localhost:5001',
       isupamOrigin: process.env.ISUPAM_ORIGIN || 'http://localhost:5050',
     };
@@ -442,7 +443,7 @@ const escapeHtml = (string) => {
 };
 
 const loadStars = async (ctx, keyword) => {
-  const origin = config('isutarOrigin');
+  const origin = config('webOrigin');
   const url = `${origin}/stars`;
   const res = await axios.get(
     url,

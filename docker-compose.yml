@@ -23,6 +23,7 @@ services:
       ISUDA_DB_USER: root
       ISUDA_DB_NAME: isuda
       ISUDA_DB_PASSWORD: isucon
+      WEB_ORIGIN: http://web:80
       ISUTAR_ORIGIN: http://isutar:5001
       ISUPAM_ORIGIN: http://isupam:5050
     ports:
@@ -54,7 +55,7 @@ services:
       ISUTAR_DB_NAME: isutar
       ISUTAR_DB_PASSWORD: isucon
       ISUDA_ORIGIN: http://isuda:5000
-      ISUDA2_ORIGIN: http://isuda2:5003
+      WEB_ORIGIN: http://web
     ports:
       - "5001:5001"
   isupam:
