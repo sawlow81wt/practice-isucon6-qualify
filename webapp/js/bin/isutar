@@ -14,7 +14,7 @@ var http = require('http');
  */
 
 if (cluster.isMaster) {
-  var numChild = process.env.PROCESS || 3;
+  var numChild = process.env.PROCESS || 6;
   for (var i = 0; i < numChild; i++) {
     cluster.fork();
   }
