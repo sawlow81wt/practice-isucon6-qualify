@@ -1,7 +1,10 @@
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'
+import NodeCache from 'node-cache'
 import axios from 'axios'
 import { Database } from "bun:sqlite";
+
+const nodeCache = new NodeCache({ stdTTL: 60 });
 
 const app = new Hono({
   port: process.env.ISUTAR_PORT || 5001,
@@ -17,9 +20,15 @@ app.use("*", async (ctx, next) => {
 });
 
 const RFC3986URIComponent = (str) => {
-    return encodeURIComponent(str).replace(/[!'()*]/g, (c) => {
+    const ret = nodeCache.get(str);
+    if (ret) {
+      return ret;
+    }
+    const encoded = encodeURIComponent(str).replace(/[!'()*]/g, (c) => {
           return '%' + c.charCodeAt(0).toString(16);
     });
+    nodeCache.set(str, encoded);
+    return encoded;
 };
 
 const dbh = async (ctx) => {
