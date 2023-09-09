@@ -69,7 +69,7 @@ class AhoCorasick {
                 current_state = current_state.child.get(char);
             }
 
-            current_state.pattern = patterns[i] // 末尾のノードにパターンを追加;
+            current_state.pattern = String(patterns[i]) // 末尾のノードにパターンを追加;
         }
     }
 
@@ -112,6 +112,8 @@ class AhoCorasick {
             while (this.goto(current_state, query[i]) === null) {
                 if (current_state.pattern !== null) {
                     result.push([i - current_state.pattern.length, i, current_state.pattern]);
+                    current_state = this.states[0];
+                    break
                 }
                 current_state = current_state.failure;
             }
@@ -440,6 +442,8 @@ const htmlify = (ctx, content, aho_corasick) => {
     result += link;
     prev = end;
   }
+  result += content.slice(prev);
+  result = result.replace(/\n/g, "<br />\n");
   return result;
 };
 
