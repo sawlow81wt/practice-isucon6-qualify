@@ -4,3 +4,5 @@ CREATE TABLE star (
     user_name VARCHAR(191) NOT NULL,
     created_at DATETIME
 ) Engine=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
+ALTER TABLE star ADD INDEX keyword (keyword);
