@@ -29,6 +29,15 @@ const config = (key) => {
   return _config[key];
 };
 
+const pool = mysql.createPool({
+    host: config('dbHost'),
+    port: config('dbPort'),
+    user: config('dbUser'),
+    password: config('dbPassword'),
+    database: config('dbName'),
+    connectionLimit: 100,
+    charset: 'utf8mb4'
+});
 
 class Node {
     constructor(id) {
@@ -145,15 +154,7 @@ const dbh = async (ctx) => {
     return ctx.dbh;
   }
 
-  ctx.dbh = mysql.createPool({
-    host: config('dbHost'),
-    port: config('dbPort'),
-    user: config('dbUser'),
-    password: config('dbPassword'),
-    database: config('dbName'),
-    connectionLimit: 1,
-    charset: 'utf8mb4'
-  });
+  ctx.dbh = await pool.getConnection();
   await ctx.dbh.query("SET SESSION sql_mode='TRADITIONAL,NO_AUTO_VALUE_ON_ZERO,ONLY_FULL_GROUP_BY'");
   await ctx.dbh.query("SET NAMES utf8mb4");
 
@@ -177,7 +178,7 @@ const authenticate = (ctx) => {
 router.use(async (ctx, next) => {
   await next();
   if (ctx.dbh) {
-    await ctx.dbh.end();
+    pool.releaseConnection(ctx.dbh);
     ctx.dbh = null;
   }
 });
