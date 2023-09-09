@@ -357,6 +357,26 @@ router.get('keyword/:keyword', async (ctx, next) => {
   await ctx.render('keyword');
 });
 
+router.get('hasKeyword/:keyword', async (ctx, next) => {
+  if (!await setName(ctx)) {
+    return;
+  }
+  const keyword = ctx.params.keyword;
+  if (!keyword) {
+    ctx.status = 400;
+    return;
+  }
+  const db = await dbh(ctx);
+  const entries = (await db.query('SELECT * FROM entry WHERE keyword = ?', [keyword]))[0];
+  if (entries.length === 0) {
+    ctx.status = 404;
+    return;
+  }
+  ctx.body = {
+    result: 'ok',
+  };
+});
+
 router.post('keyword/:keyword', async (ctx, next) => {
   if (!await setName(ctx)) {
     return;
