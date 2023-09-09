@@ -153,6 +153,8 @@ const setName = async (ctx) => {
   ctx.state = {};
   const db = await dbh(ctx);
   const userId = ctx.session.userId;
+  ctx.state.user_name = ctx.session.userName;
+  return true;
   if (userId != null) {
     const users = (await db.query('SELECT name FROM user WHERE id = ?', [userId.toString()]))[0];
     if (users.length > 0) {
@@ -327,11 +329,13 @@ router.post('login', async (ctx, next) => {
     return;
   }
   ctx.session.userId = rows[0].id;
+  ctx.session.userName = rows[0].name;
   await ctx.redirect('/');
 });
 
 router.get('logout', async (ctx, next) => {
   ctx.session.userId = null;
+  ctx.session.userName = null;
   await ctx.redirect('/');
 });
 
