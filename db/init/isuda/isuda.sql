@@ -16,4 +16,4 @@ CREATE TABLE user (
 ) Engine=InnoDB DEFAULT CHARSET=utf8mb4;
 
 ALTER TABLE entry ADD keyword_length INT UNSIGNED NOT NULL AFTER keyword;
-ALTER TABLE entry ADD INDEX keyword_length (keyword_length);
+ALTER TABLE entry ADD INDEX updated_at (updated_at);
