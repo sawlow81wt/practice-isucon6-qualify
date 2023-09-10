@@ -62,7 +62,7 @@ class AhoCorasick {
         this.states = [new Node(0)];
         this.output = [[]];
         this.make_goto(patterns);
-        this.make_failure();
+        //this.make_failure();
     }
 
     make_goto(patterns) {
@@ -105,9 +105,7 @@ class AhoCorasick {
         if (state.has_next(char)) {
             return state.child.get(char);
         }
-        if (state.id === 0) {
-            return state;
-        }
+
         return null
     }
 
@@ -115,24 +113,27 @@ class AhoCorasick {
     match(query) {
         const result = [];
         let current_state = this.states[0] // root node
-
-        for (let i = 0; i < query.length; i++) {
+        let i = 0
+        while (i < query.length) {
             // 遷移先がある場合は遷移
-            while (this.goto(current_state, query[i]) === null) {
+            let j = i
+            let tmp = []
+            while (this.goto(current_state, query[j]) !== null) {
+                current_state = this.goto(current_state, query[j]);
                 if (current_state.pattern !== null) {
-                    result.push([i - current_state.pattern.length, i, current_state.pattern]);
-                    current_state = this.states[0];
-                    break
+                    tmp.push([j - current_state.pattern.length + 1, j + 1, current_state.pattern])
                 }
-                current_state = current_state.failure;
+                j++;
             }
-            current_state = this.goto(current_state, query[i]);
+            if (tmp.length > 0) {
+                result.push(tmp[tmp.length - 1])
+                i += tmp[tmp.length - 1][2].length
+            } else {
+                i++
+            }
+            current_state = this.states[0]
         }
-
-        if (current_state.pattern !== null) {
-            result.push([query.length - current_state.pattern.length, query.length, current_state.pattern]);
-        }
-        return result;
+        return result
     }
 }
 
@@ -409,7 +410,7 @@ router.post('keyword/:keyword', async (ctx, next) => {
   }
 
   const db = await dbh(ctx);
-  const entries = (await db.query('SELECT keywords FROM entry WHERE keyword = ?', [keyword]))[0];
+  const entries = (await db.query('SELECT keyword FROM entry WHERE keyword = ?', [keyword]))[0];
   if (entries.length == 0) {
     ctx.status = 404;
     return;
@@ -421,14 +422,14 @@ router.post('keyword/:keyword', async (ctx, next) => {
 });
 
 const get_keywords = async (ctx) => {
-  const cached_keywords = nodeCache.get('keywords');
-  if (cached_keywords) {
-    return cached_keywords;
-  }
+  // const cached_keywords = nodeCache.get('keywords');
+  // if (cached_keywords) {
+  //   return cached_keywords;
+  // }
 
   const db = await dbh(ctx);
   const keywords = (await db.query('SELECT keyword FROM entry'))[0];
-  nodeCache.set('keywords', keywords);
+  //nodeCache.set('keywords', keywords);
   return keywords;
 };
 
@@ -439,7 +440,7 @@ const purge_keywords_cache = async (ctx) => {
 const make_aho_corasick = async (ctx) => {
   const keywords = await get_keywords(ctx);
   const aho_corasick = new AhoCorasick(
-    keywords.map((keyword) => escapeRegExp(keyword.keyword))
+    keywords.map((keyword) => keyword.keyword)
   );
   return aho_corasick;
 };
