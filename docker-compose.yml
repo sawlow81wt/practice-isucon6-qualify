@@ -28,21 +28,6 @@ services:
       ISUPAM_ORIGIN: http://isupam:5050
     ports:
       - "5000:5000"
-  isuda2:
-    build:
-      context: .
-      dockerfile: ./docker/isuda2.dockerfile
-      target: isuda
-    environment:
-      ISUDA_DB_HOST: mysql-isuda
-      ISUDA_DB_PORT: 3306
-      ISUDA_DB_USER: root
-      ISUDA_DB_NAME: isuda
-      ISUDA_DB_PASSWORD: isucon
-      ISUTAR_ORIGIN: http://isutar:5001
-      ISUPAM_ORIGIN: http://isupam:5050
-    ports:
-      - "5003:5003"
   isutar:
     build:
       context: .
