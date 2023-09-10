@@ -4,7 +4,7 @@
     "start": "foreman start",
     "koa": "./node_modules/.bin/runkoa bin/www",
     "both": "./node_modules/.bin/nodemon bin/run",
-    "isuda": "node --require ./instrumentations.js ./bin/run_isuda",
+    "isuda": "node ./bin/run_isuda",
     "isutar": "node --require ./instrumentations.js ./bin/run_isutar",
     "dev_isuda": "./node_modules/.bin/nodemon bin/run_isuda",
     "dev_isutar": "./node_modules/.bin/nodemon bin/run_isutar",
