@@ -155,7 +155,7 @@ const dbh = async (ctx) => {
   }
 
   ctx.dbh = await pool.getConnection();
-  await ctx.dbh.query("SET SESSION sql_mode='TRADITIONAL,NO_AUTO_VALUE_ON_ZERO,ONLY_FULL_GROUP_BY'");
+  // await ctx.dbh.query("SET SESSION sql_mode='TRADITIONAL,NO_AUTO_VALUE_ON_ZERO,ONLY_FULL_GROUP_BY'");
   await ctx.dbh.query("SET NAMES utf8mb4");
 
   return ctx.dbh;

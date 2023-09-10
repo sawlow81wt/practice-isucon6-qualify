@@ -1,10 +1,7 @@
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'
-import NodeCache from 'node-cache'
-import axios from 'axios'
+import mysql from 'mysql2/promise'
 import { Database } from "bun:sqlite";
-
-const nodeCache = new NodeCache({ stdTTL: 60 });
 
 const app = new Hono({
   port: process.env.ISUTAR_PORT || 5001,
@@ -17,19 +14,41 @@ app.use("*", async (ctx, next) => {
     await ctx.dbh.close();
     ctx.dbh = null;
   }
+
+  if (ctx.mdbh) {
+    await ctx.mdbh.end();
+    ctx.mdbh = null;
+  }
 });
 
-const RFC3986URIComponent = (str) => {
-    const ret = nodeCache.get(str);
-    if (ret) {
-      return ret;
-    }
-    const encoded = encodeURIComponent(str).replace(/[!'()*]/g, (c) => {
-          return '%' + c.charCodeAt(0).toString(16);
-    });
-    nodeCache.set(str, encoded);
-    return encoded;
+const mdbh = async (ctx) => {
+  if (ctx.mdbh) {
+    return ctx.mdbh;
+  }
+
+  ctx.mdbh = await mysql.createConnection({
+    host: process.env.ISUDA_DB_HOST || 'localhost',
+    port: process.env.ISUDA_DB_PORT || 3306,
+    user: process.env.ISUDA_DB_USER || 'root',
+    password: process.env.ISUDA_DB_PASSWORD || 'isucon',
+    database: "isuda",
+    charset: 'utf8mb4'
+  });
+  await ctx.mdbh.query("SET SESSION sql_mode='TRADITIONAL,NO_AUTO_VALUE_ON_ZERO,ONLY_FULL_GROUP_BY'");
+  await ctx.mdbh.query("SET NAMES utf8mb4");
+
+  return ctx.mdbh;
 };
+
+const hasKeyword = async (ctx, keyword) => {
+  if (!keyword) {
+    return false
+  }
+
+  const db = await mdbh(ctx);
+  const entries = (await db.query('SELECT keyword FROM entry WHERE keyword = ?', [keyword]))[0];
+  return entries.length > 0
+}
 
 const dbh = async (ctx) => {
   if (ctx.dbh) {
@@ -72,19 +91,15 @@ const getStars = async (ctx) => {
 }
 
 const postStars = async (ctx) => {
-  const db = await dbh(ctx);
   const body = await ctx.req.parseBody();
   const keyword = ctx.req.query("keyword") || body.keyword;
   const user = ctx.req.query("user") || body.user;
-
-  const origin = process.env.WEB_ORIGIN || 'http://localhost:5003';
-  const url = `${origin}/hasKeyword/${RFC3986URIComponent(keyword)}`;
-  try {
-    const res = await axios.get(url);
-  } catch (err) {
+  
+  if (!(await hasKeyword(ctx, keyword))) {
     return ctx.text("", 404)
   }
-
+  
+  const db = await dbh(ctx);
   const query = db.query(`INSERT INTO star (keyword, user_name, created_at) VALUES ($keyword, $user, "now")`);
 
   const insert = await db.transaction((velues) => {

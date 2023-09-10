@@ -48,8 +48,6 @@ const dbh = async (ctx) => {
     return ctx.dbh;
   }
 
-  console.log("config", config('dsn'), config('dbHost'), config('dbPort'), config('dbUser'), config('dbPassword'), config('dbName'));
-
   ctx.dbh = await mysql.createConnection({
     host: config('dbHost'),
     port: config('dbPort'),

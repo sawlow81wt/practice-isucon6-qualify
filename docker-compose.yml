@@ -49,11 +49,11 @@ services:
       dockerfile: ./docker/api.dockerfile
       target: isutar
     environment:
-      ISUTAR_DB_HOST: mysql-isutar
-      ISUTAR_DB_PORT: 3306
-      ISUTAR_DB_USER: root
-      ISUTAR_DB_NAME: isutar
-      ISUTAR_DB_PASSWORD: isucon
+      ISUDA_DB_HOST: mysql-isuda
+      ISUDA_DB_PORT: 3306
+      ISUDA_DB_USER: root
+      ISUDA_DB_NAME: isuda
+      ISUDA_DB_PASSWORD: isucon
       ISUDA_ORIGIN: http://isuda:5000
       WEB_ORIGIN: http://web
     ports:
