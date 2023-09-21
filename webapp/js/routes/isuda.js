@@ -82,25 +82,6 @@ class AhoCorasick {
         }
     }
 
-    make_failure() {
-        const queue = [ this.states[0] ];
-        while (queue.length > 0) {
-            const current_state = queue.shift();
-            for (let [char, next_state] of current_state.child) {
-                queue.push(next_state);
-                if (current_state.id === 0) {
-                    next_state.failure = this.states[0];
-                } else {
-                    let failure_state = current_state.failure;
-                    while (this.goto(failure_state, char) === null) {
-                        failure_state = failure_state.failure;
-                    }
-                    next_state.failure = this.goto(failure_state, char);
-                }
-            }
-        }
-    }
-
     goto(state, char) {
         if (state.has_next(char)) {
             return state.child.get(char);
