@@ -1,7 +1,11 @@
 version: "3.7"
 services:
   web:
-    image: nginx:alpine
+    build:
+      context: .
+      dockerfile: ./docker/nginx.dockerfile
+      args:
+        ENABLED_MODULES: brotli
     ports:
       - "80:80"
     volumes:
