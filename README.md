@@ -1,6 +1,7 @@
 # ISUCON6 予選リポジトリのForkリポジトリ
 
-ISUCONの練習用
+isucon6予選の練習用
+[こちらが本家](https://github.com/isucon/isucon6-qualify)になります
 
 ## リポジトリ内容
 
